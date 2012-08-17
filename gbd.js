@@ -72,11 +72,14 @@ casper.on('resource.received', function (resource) {
             var url, file;
             url = resource.url;
             file = (url.substring(url.indexOf("&pg=") + 4, url.indexOf("&img"))) + ".png";
-            this.echo("wget --quiet --output-document='" + file + "' --user-agent=\"Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.3) Gecko/2008092416 Firefox/3.0.3\" '" + resource.url + "'");
-            //TODO: Implement this when CasperJS issue #73 is fixed: https://github.com/n1k0/casperjs/issues/73
-            // try { 
-            //     casper.download(resource.url, file);
-            // }
+            //TODO: Add an option to either output a wget script or download right away
+            //this.echo("wget --quiet --output-document='" + file + "' --user-agent=\"Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.3) Gecko/2008092416 Firefox/3.0.3\" '" + resource.url + "'");
+            try {
+                this.echo("Attempting to download file " + file);
+                casper.download(resource.url, file);
+            } catch (e) {
+                this.echo(e);
+            }
         }
     }
 });
