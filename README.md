@@ -11,29 +11,27 @@ I wanted to scrape the HTML and extract all the image information that contains 
 
 Thus, the only way to extract the images is using an actual, javascript enabled browser. Or a a headless implementation of one, and this is where PhantomJS comes in :)
 
-I have put together some very ugly code that loads a book on Google Books, scrolls all the way down and prints the URLs for the files so you can download them all with wget.
+I have put together some very ugly code that loads a book on Google Books, scrolls all the way down and saves all the pages in PNG format. Now that CasperJS supports file downloading properly, I have changed the standard behavior of printing the URLs of the files to download afterwards with wget, but I would like to have it as an option.
 
 In the future, I would like to generate a PDF with all the pages together. Wanna help me out? :)
 
 Dependencies
 ------------
 
-- CapserJS 0.6.6
-- PhantomJS 1.5
-- wget
+- CapserJS 1.0.0-RC1
+- PhantomJS 1.6.1
 
 Known Limitations
 -----------------
 
 - The book URL is hardcoded
-- The script does not actually download books, but rather prints a list of wget commands you must run (due to a download bug in CasperJS), I suggest redirecting the output to a .sh or .bat file
+- The script downloads the pages automatically, since the download bug was fixed
 - It does not download books with limited preview (though I have plans to add proxy and Tor support to bypass the preview limitation :)
 
 Usage
 -----
 
-`casperjs > pages.sh
-sh pages.sh`
+`casperjs gbd.js`
 
 TODO
 ----
