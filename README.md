@@ -30,6 +30,10 @@ Usage
 
 `casperjs gbd.js <Google Books ID>`
 
+To delete all "page not available" pages:
+
+`./deleteImageNotAvailables.bash <page_not_available_image.png>`
+
 TODO
 ----
 - [X] Load the URL from the command line
