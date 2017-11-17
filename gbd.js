@@ -1,87 +1,46 @@
-/*jslint node: true */
-/*jslint browser: true */
-/*jslint plusplus: true */
-
-var pages = [];
-
-//TODO: load the URL from the command line
-var url = "http://books.google.com.br/books?id=AS4DAAAAMBAJ&printsec=frontcover&hl=pt-BR&source=gbs_ge_summary_r&cad=0#v=onepage&q&f=false";
-
-Array.prototype.exists = function (search) {
-    "use strict";
-    var i;
-    for (i = 0; i < this.length; i++) {
-        if (this[i] === search) {
-            return true;
-        }
-    }
-    return false;
-};
-
+var pngFileNames = []; //array of PNG files downloaded
 var casper = require('casper').create({
-    onError: function (self, m) {
-        "use strict";
-        console.log('FATAL:' + m);
-        self.exit();
-    },
-    viewportSize: {
-        width: 1024,
-        height: 600
-    }
+    verbose: false,
+    logLevel: "debug"
 });
+var x = require('casper').selectXPath;
+var fs = require('fs');
 
-casper.start(url, function () {
-    "use strict";
-    var loading_div, page_down;
-    loading_div = "div[style*='position: absolute; left: 0px; color: rgb(128, 128, 128); font-size: 13px; background-color: white; bottom: 0px; -webkit-user-select: none;']";
-    page_down = ".SPRITE_page_down";
-    casper.then(function () {
+//Get the Google Books ID from the command line:
+casper.cli.drop("cli");
+casper.cli.drop("casper-path");
+if (casper.cli.args.length === 0) {
+    casper.echo("Please pass the Google Books ID (e.g., zAsjkHJ8aP8C) to the command line.").exit();
+}
+var url = 'https://books.google.com/books?id=' + casper.cli.args[0] + '&printsec=frontcover#v=onepage&q&f=false';
 
-        this.waitFor(
-            function () {
-                this.click(page_down);
+casper.start(url);
 
-                var elem, current_position;
+casper.on('resource.received', function(resource) {
+    var URL = resource.url;
+    if (URL.indexOf("content?") !== -1 &&
+        URL.indexOf("&pg=") !== -1 &&
+        URL.indexOf("&img=1") !== -1) { //if it's an image URL
 
-                elem = this.evaluate(function () {
-                    var viewport_div, elem;
-                    viewport_div = "div[id='viewport'] > div > div > div";
-                    elem = document.querySelector(viewport_div).offsetParent;
-                    return elem;
-                });
+        //form file name with 4-digit numbers padded with zero:
+        var pgPrefix = URL.substring(URL.indexOf("&pg=P") + 5, URL.indexOf("&pg=P") + 6);
+        var pgNum = URL.substring(URL.indexOf("&pg=P") + 6, URL.indexOf("&img"));
+        var pgNumPadded = String("000" + pgNum).slice(-4);
+        var file = pgPrefix + pgNumPadded + ".png";
 
-                current_position = elem.scrollHeight - elem.scrollTop - elem.offsetHeight;
-                return (elem.scrollHeight - elem.scrollTop - elem.offsetHeight === 0);
-            },
-            function () {
-                // this.echo("Done scrolling");
-            },
-            function () {
-                // this.echo("Timeout!?");
-            },
-            Infinity //This is a strong candidate to win a TheDailyWTF award :)
-        );
-    });
-});
-
-casper.on('resource.received', function (resource) {
-    "use strict";
-    if ((resource.url.indexOf("&pg=P") !== -1) && (resource.url.indexOf("&jscmd=click3") === -1)) {
-        if (!pages.exists(resource.url)) {
-            pages.push(resource.url);
-            var url, file;
-            url = resource.url;
-            file = (url.substring(url.indexOf("&pg=") + 4, url.indexOf("&img"))) + ".png";
-            //TODO: Add an option to either output a wget script or download right away
-            //this.echo("wget --quiet --output-document='" + file + "' --user-agent=\"Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.3) Gecko/2008092416 Firefox/3.0.3\" '" + resource.url + "'");
+        if (pngFileNames.indexOf(file) === -1 && !fs.exists(file)) {
             try {
-                this.echo("Attempting to download file " + file);
-                casper.download(resource.url, file);
+                this.echo(file);
+                casper.download(URL, file);
+                pngFileNames.push(file); // keep track of downloaded PNGs
             } catch (e) {
                 this.echo(e);
             }
         }
+    } else if (URL.indexOf("&jscmd=click3") !== -1) { //advance to next page
+        this.click(x('//*[@src="/googlebooks/images/kennedy/page_right.png"]'));
     }
 });
 
 casper.run();
+
